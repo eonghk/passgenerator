@@ -3,6 +3,7 @@
 namespace Thenextweb;
 
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
 use Thenextweb\Definitions\DefinitionInterface;
@@ -149,7 +150,7 @@ class PassGenerator
      */
     public function addAsset($assetPath, $name = null)
     {
-        if (is_file($assetPath)) {
+        if (is_file($assetPath) || Str::startsWith($assetPath, "http")) {
             if(empty($name)) {
                 $this->assets[basename($assetPath)] = $assetPath;
             } else {
@@ -432,7 +433,12 @@ class PassGenerator
 
         // Add all the assets
         foreach ($this->assets as $name => $path) {
-            $zip->addFile($path, $name);
+            if(Str::startsWith($path, "http")) {
+                $content = file_get_contents($path);
+                $zip->addFromString($name, $content);
+            } else {
+                $zip->addFile($path, $name);
+            }
         }
 
         $zip->close();
